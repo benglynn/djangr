@@ -24,21 +24,21 @@ class Command(NoArgsCommand):
                 id = int(photo_el.get('id'))
                 try:
                     photo = Photo.objects.get(id=id)
-                    print 'Photo %s already exists' % id
+                    print 'Updating photo %s' % id
                 except Photo.DoesNotExist:
                     print 'Creating a new photo %s' % id
                     photo = Photo()
-                    photo.id = id
-                    photo.secret = photo_el.get('secret')
-                    info_el = flickr.photos_getinfo(
-                        user_id=account['user_id'],
-                        photo_id=photo.id, secret=photo.secret)
-                    photoinfo_el = info_el.find('photo')
-                    photo.description = photoinfo_el.findtext('description')
-                    photo.title = photoinfo_el.findtext('title')
-                    photo.farm = int(photoinfo_el.get('farm'))
-                    photo.server = int(photoinfo_el.get('server'))
-                    photo.save()
+                photo.id = id
+                photo.secret = photo_el.get('secret')
+                info_el = flickr.photos_getinfo(
+                    user_id=account['user_id'],
+                    photo_id=photo.id, secret=photo.secret)
+                photoinfo_el = info_el.find('photo')
+                photo.description = photoinfo_el.findtext('description')
+                photo.title = photoinfo_el.findtext('title')
+                photo.farm = int(photoinfo_el.get('farm'))
+                photo.server = int(photoinfo_el.get('server'))
+                photo.save()
 
             
 # Example photo_el and its info_el
