@@ -5,13 +5,14 @@ class Photo(models.Model):
     Store photo details returned by the flickr api.
     """
     title = models.CharField(max_length=180)
+    owner = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
     farm = models.IntegerField()
     secret = models.CharField(max_length=50)
     server = models.IntegerField()
     
-    photoxml = models.XMLField(schema_path=None)
-    phoinfoxml = models.XMLField(schema_path=None)
+    xml = models.XMLField(schema_path=None)
+    infoxml = models.XMLField(schema_path=None)
     
     longitude = models.FloatField(blank=True, null=True)
     latitude = models.FloatField(blank=True, null=True)

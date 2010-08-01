@@ -19,7 +19,7 @@ class Command(NoArgsCommand):
             flickr = flickrapi.FlickrAPI(account['api_key'])
             photos_el = flickr.photos_search(user_id=account['user_id'])
         
-            for photo_el in photos_el.findall('photos/photo')[:1]:
+            for photo_el in photos_el.findall('photos/photo')[:3]:
             
                 id = int(photo_el.get('id'))
                 try:
@@ -29,15 +29,27 @@ class Command(NoArgsCommand):
                     print 'Creating a new photo %s' % id
                     photo = Photo()
                 photo.id = id
+                photo.xml = tostring(photo_el)
+                photo.owner = photo_el.get('owner')
                 photo.secret = photo_el.get('secret')
                 info_el = flickr.photos_getinfo(
                     user_id=account['user_id'],
                     photo_id=photo.id, secret=photo.secret)
+                photo.infoxml = tostring(info_el)
                 photoinfo_el = info_el.find('photo')
                 photo.description = photoinfo_el.findtext('description')
                 photo.title = photoinfo_el.findtext('title')
                 photo.farm = int(photoinfo_el.get('farm'))
                 photo.server = int(photoinfo_el.get('server'))
+                
+                location = photoinfo_el.find('location')
+                if location:
+                    latitude = location.get('latitude')
+                    longitude = location.get('longitude')
+                    if latitude and longitude:
+                        photo.longitude = longitude
+                        photo.latitude = latitude
+                
                 photo.save()
 
             
