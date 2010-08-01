@@ -20,7 +20,7 @@ class Command(NoArgsCommand):
             flickr = flickrapi.FlickrAPI(account['api_key'])
             photos_el = flickr.photos_search(user_id=account['user_id'])
         
-            for photo_el in photos_el.findall('photos/photo')[:3]:
+            for photo_el in photos_el.findall('photos/photo'):
             
                 id = int(photo_el.get('id'))
                 try:
