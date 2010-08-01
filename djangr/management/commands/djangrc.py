@@ -3,33 +3,81 @@ import flickrapi
 from xml.etree.ElementTree import ElementTree
 from xml.etree.ElementTree import tostring
 from djangr.models import Photo
+from django.conf import settings
 
 class Command(NoArgsCommand):
     
     def handle_noargs(self, **options):
         """
-        Poll flickr for photos and update database
-        Todo: delete existing after successfull poll before saving
+        Poll flickr for photos and create save an onject to the database for
+        each that isn't currently represented.
+        
         Todo: keys and ids from settings
         """
+        for account in settings.DJANGR_ACCOUNTS:
         
-        api_key = '1891b7f6d1c2c6336353e6a0a6dace11'
-        flickr = flickrapi.FlickrAPI(api_key)
-        photos_el = flickr.photos_search(user_id='51991206@N08')
-        Photo.objects.all().delete()
+            flickr = flickrapi.FlickrAPI(account['api_key'])
+            photos_el = flickr.photos_search(user_id=account['user_id'])
         
-        for photo_el in photos_el.findall('photos/photo'):
+            for photo_el in photos_el.findall('photos/photo')[:1]:
             
-            # Create photo instance with basic data
-            photo = Photo()
-            photo.id = int(photo_el.get('id'))
-            photo.secret = photo_el.get('secret')
-            # Get detailed info
-            info_el = flickr.photos_getinfo(user_id='50893299@N07',
-                photo_id=photo.id, secret=photo.secret)
-            photo_el = info_el.find('photo')
-            photo.description = photo_el.findtext('description')
-            photo.title = photo_el.findtext('title')
-            photo.farm = int(photo_el.get('farm'))
-            photo.server = int(photo_el.get('server'))
-            photo.save()
+                id = int(photo_el.get('id'))
+                try:
+                    photo = Photo.objects.get(id=id)
+                    print 'Photo %s already exists' % id
+                except Photo.DoesNotExist:
+                    print 'Creating a new photo %s' % id
+                    photo = Photo()
+                    photo.id = id
+                    photo.secret = photo_el.get('secret')
+                    info_el = flickr.photos_getinfo(
+                        user_id=account['user_id'],
+                        photo_id=photo.id, secret=photo.secret)
+                    photoinfo_el = info_el.find('photo')
+                    photo.description = photoinfo_el.findtext('description')
+                    photo.title = photoinfo_el.findtext('title')
+                    photo.farm = int(photoinfo_el.get('farm'))
+                    photo.server = int(photoinfo_el.get('server'))
+                    photo.save()
+
+            
+# Example photo_el and its info_el
+"""
+<photo 
+    farm="5" 
+    id="4849809952" 
+    isfamily="0" 
+    isfriend="0" 
+    ispublic="1" 
+    owner="51991206@N08" 
+    secret="d4d429a7fe" 
+    server="4078" 
+    title="Graham in the undergrowth" />
+	
+<rsp stat="ok">
+<photo dateuploaded="1280676409" farm="5" id="4849809952" isfavorite="0" license="0" media="photo" originalformat="jpg" originalsecret="bd80e144dd" rotation="0" secret="d4d429a7fe" server="4078" views="0">
+	<owner location="" nsid="51991206@N08" realname="Ben Glynn" username="benglynn" />
+	<title>Graham in the undergrowth</title>
+	<description />
+	<visibility isfamily="0" isfriend="0" ispublic="1" />
+	<dates lastupdate="1280676436" posted="1280676409" taken="2010-07-31 13:44:40" takengranularity="0" />
+	<editability canaddmeta="0" cancomment="0" />
+	<usage canblog="0" candownload="1" canprint="0" canshare="1" />
+	<comments>0</comments>
+	<notes />
+	<tags />
+	<location accuracy="16" context="0" latitude="51.428858" longitude="-2.491025" place_id="r4cVRCaYAJV4HQ" woeid="11971">
+		<neighbourhood place_id="r4cVRCaYAJV4HQ" woeid="11971">Barrs Court</neighbourhood>
+		<locality place_id="4bjYj3.YApXUcg" woeid="13963">Bristol</locality>
+		<county place_id="jLTl2QOYA5qMknc0pw" woeid="12602180">City of Bristol</county>
+		<region place_id="pn4MsiGbBZlXeplyXg" woeid="24554868">England</region>
+		<country place_id="DevLebebApj4RVbtaQ" woeid="23424975">United Kingdom</country>
+	</location>
+	<geoperms iscontact="0" isfamily="0" isfriend="0" ispublic="1" />
+	<urls>
+		<url type="photopage">http://www.flickr.com/photos/benglynn/4849809952/</url>
+	</urls>
+</photo>
+</rsp>
+
+"""

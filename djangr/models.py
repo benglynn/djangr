@@ -10,6 +10,12 @@ class Photo(models.Model):
     secret = models.CharField(max_length=50)
     server = models.IntegerField()
     
+    photoxml = models.XMLField(schema_path=None)
+    phoinfoxml = models.XMLField(schema_path=None)
+    
+    longitude = models.FloatField(blank=True, null=True)
+    latitude = models.FloatField(blank=True, null=True)
+    
     def geturl(self, size='s'):
         return ('http://farm%(farm)s.static.flickr.com/%(server)s' +\
             '/%(id)s_%(secret)s%(size)s.jpg') % {
