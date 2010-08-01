@@ -1,3 +1,4 @@
+from datetime import datetime
 from django.core.management.base import NoArgsCommand
 import flickrapi
 from xml.etree.ElementTree import ElementTree
@@ -35,8 +36,10 @@ class Command(NoArgsCommand):
                 info_el = flickr.photos_getinfo(
                     user_id=account['user_id'],
                     photo_id=photo.id, secret=photo.secret)
-                photo.infoxml = tostring(info_el)
                 photoinfo_el = info_el.find('photo')
+                photo.infoxml = tostring(photoinfo_el)
+                dateuploaded = float(photoinfo_el.get('dateuploaded'))
+                photo.dateuploaded = datetime.fromtimestamp(dateuploaded)
                 photo.description = photoinfo_el.findtext('description')
                 photo.title = photoinfo_el.findtext('title')
                 photo.farm = int(photoinfo_el.get('farm'))
@@ -49,7 +52,6 @@ class Command(NoArgsCommand):
                     if latitude and longitude:
                         photo.longitude = longitude
                         photo.latitude = latitude
-                
                 photo.save()
 
             
@@ -66,7 +68,6 @@ class Command(NoArgsCommand):
     server="4078" 
     title="Graham in the undergrowth" />
 	
-<rsp stat="ok">
 <photo dateuploaded="1280676409" farm="5" id="4849809952" isfavorite="0" license="0" media="photo" originalformat="jpg" originalsecret="bd80e144dd" rotation="0" secret="d4d429a7fe" server="4078" views="0">
 	<owner location="" nsid="51991206@N08" realname="Ben Glynn" username="benglynn" />
 	<title>Graham in the undergrowth</title>
@@ -90,6 +91,4 @@ class Command(NoArgsCommand):
 		<url type="photopage">http://www.flickr.com/photos/benglynn/4849809952/</url>
 	</urls>
 </photo>
-</rsp>
-
 """
