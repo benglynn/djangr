@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from django.core.management.base import NoArgsCommand
 import flickrapi
@@ -5,6 +6,9 @@ from xml.etree.ElementTree import ElementTree
 from xml.etree.ElementTree import tostring
 from djangr.models import Photo
 from django.conf import settings
+
+# 2010-07-31 13:44:40
+DATE_REGEXP = re.compile(u'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}')
 
 class Command(NoArgsCommand):
     
@@ -30,23 +34,28 @@ class Command(NoArgsCommand):
                 except Photo.DoesNotExist:
                     print 'Creating a new photo %s' % id
                     photo = Photo()
+                    photo.date = datetime.now()
                 
                 # Request more information on the photo
+                secret = photo_el.get('secret')
                 info_el = flickr.photos_getinfo(
                     user_id=account['user_id'],
-                    photo_id=photo.id, secret=photo.secret)
+                    photo_id=id, secret=secret)
                 photoinfo_el = info_el.find('photo')
+                dateuploadedst = photoinfo_el.get('dateuploaded')
+                datetakenst = photoinfo_el.find('dates').get('taken', '')
                 
                 # Parse xml
-                dateuploadedst = float(photoinfo_el.get('dateuploaded'))
-                dateuploaded = datetime.fromtimestamp(dateuploadedst)
+                date = None
+                if DATE_REGEXP.match(datetakenst):
+                    date = datetime.strptime(datetakenst, '%Y-%m-%d %H:%M:%S')
+                dateuploaded = datetime.fromtimestamp(float(dateuploadedst))
                 description = photoinfo_el.findtext('description')
                 title = photoinfo_el.findtext('title')
                 farm = int(photoinfo_el.get('farm'))
                 server = int(photoinfo_el.get('server'))
                 xml = tostring(photo_el)
                 owner = photo_el.get('owner')
-                secret = photo_el.get('secret')
                 infoxml = tostring(photoinfo_el)
                 location = photoinfo_el.find('location')
                 if location:
@@ -55,6 +64,8 @@ class Command(NoArgsCommand):
               
                 # Set core properties
                 photo.id = id
+                if date:
+                    photo.date = date
                 photo.xml = xml
                 photo.owner = owner
                 photo.secret = secret

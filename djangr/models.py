@@ -5,6 +5,7 @@ class Photo(models.Model):
     Store photo details returned by the flickr api.
     """
     title = models.CharField(max_length=180)
+    date = models.DateTimeField() # date taken, 'date' is polymorphic
     dateuploaded = models.DateTimeField()
     owner = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
@@ -28,4 +29,4 @@ class Photo(models.Model):
             'size': size and '_%s' % size or ''}
             
     class Meta(object):
-        ordering = ['-dateuploaded',]
+        ordering = ['-date',]
