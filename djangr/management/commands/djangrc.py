@@ -21,7 +21,8 @@ class Command(NoArgsCommand):
             photos_el = flickr.photos_search(user_id=account['user_id'])
         
             for photo_el in photos_el.findall('photos/photo'):
-            
+                
+                # Reference existing photo or create new
                 id = int(photo_el.get('id'))
                 try:
                     photo = Photo.objects.get(id=id)
@@ -29,29 +30,46 @@ class Command(NoArgsCommand):
                 except Photo.DoesNotExist:
                     print 'Creating a new photo %s' % id
                     photo = Photo()
-                photo.id = id
-                photo.xml = tostring(photo_el)
-                photo.owner = photo_el.get('owner')
-                photo.secret = photo_el.get('secret')
+                
+                # Request more information on the photo
                 info_el = flickr.photos_getinfo(
                     user_id=account['user_id'],
                     photo_id=photo.id, secret=photo.secret)
                 photoinfo_el = info_el.find('photo')
-                photo.infoxml = tostring(photoinfo_el)
-                dateuploaded = float(photoinfo_el.get('dateuploaded'))
-                photo.dateuploaded = datetime.fromtimestamp(dateuploaded)
-                photo.description = photoinfo_el.findtext('description')
-                photo.title = photoinfo_el.findtext('title')
-                photo.farm = int(photoinfo_el.get('farm'))
-                photo.server = int(photoinfo_el.get('server'))
                 
+                # Parse xml
+                dateuploadedst = float(photoinfo_el.get('dateuploaded'))
+                dateuploaded = datetime.fromtimestamp(dateuploadedst)
+                description = photoinfo_el.findtext('description')
+                title = photoinfo_el.findtext('title')
+                farm = int(photoinfo_el.get('farm'))
+                server = int(photoinfo_el.get('server'))
+                xml = tostring(photo_el)
+                owner = photo_el.get('owner')
+                secret = photo_el.get('secret')
+                infoxml = tostring(photoinfo_el)
                 location = photoinfo_el.find('location')
                 if location:
                     latitude = location.get('latitude')
                     longitude = location.get('longitude')
-                    if latitude and longitude:
-                        photo.longitude = longitude
-                        photo.latitude = latitude
+              
+                # Set core properties
+                photo.id = id
+                photo.xml = xml
+                photo.owner = owner
+                photo.secret = secret
+                photo.infoxml = infoxml
+                photo.dateuploaded = dateuploaded
+                photo.description = description
+                photo.title = title
+                photo.farm = farm
+                photo.server = server
+                
+                # Set optional properties
+                if latitude and longitude:
+                    photo.longitude = longitude
+                    photo.latitude = latitude
+                    
                 photo.save()
 
             
