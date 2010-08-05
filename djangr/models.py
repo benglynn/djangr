@@ -8,6 +8,7 @@ class Photo(models.Model):
     date = models.DateTimeField() # date taken, 'date' is polymorphic
     dateuploaded = models.DateTimeField()
     owner = models.CharField(max_length=50)
+    username = models.CharField(max_length=50)
     description = models.TextField(null=True, blank=True)
     farm = models.IntegerField()
     secret = models.CharField(max_length=50)

@@ -42,6 +42,7 @@ class Command(NoArgsCommand):
                     user_id=account['user_id'],
                     photo_id=id, secret=secret)
                 photoinfo_el = info_el.find('photo')
+                username = photoinfo_el.find('owner').get('username')
                 dateuploadedst = photoinfo_el.get('dateuploaded')
                 datetakenst = photoinfo_el.find('dates').get('taken', '')
                 
@@ -67,7 +68,7 @@ class Command(NoArgsCommand):
                 if date:
                     photo.date = date
                 photo.xml = xml
-                photo.owner = owner
+                photo.username = username
                 photo.secret = secret
                 photo.infoxml = infoxml
                 photo.dateuploaded = dateuploaded
