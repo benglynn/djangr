@@ -21,7 +21,7 @@ class Command(NoArgsCommand):
         """
         for account in settings.DJANGR_ACCOUNTS:
         
-            flickr = flickrapi.FlickrAPI(account['api_key'])
+            flickr = flickrapi.FlickrAPI(settings.DJANGR_APIKEY)
             photos_el = flickr.photos_search(user_id=account['user_id'])
         
             for photo_el in photos_el.findall('photos/photo'):
@@ -78,9 +78,14 @@ class Command(NoArgsCommand):
                 photo.server = server
                 
                 # Set optional properties
-                if latitude and longitude:
+                if location:
                     photo.longitude = longitude
                     photo.latitude = latitude
+                # These may have been removed from flickr, wipe them
+                else:
+                    photo.longitude = None
+                    photo.latitude = None
+                    
                     
                 photo.save()
 
