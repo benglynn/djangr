@@ -26,66 +26,48 @@ class Command(NoArgsCommand):
         
             for photo_el in photos_el.findall('photos/photo'):
                 
-                # Reference existing photo or create new
                 id = int(photo_el.get('id'))
+                secret = photo_el.get('secret')
+                
+                # Reference existing photo or create new
                 try:
                     photo = Photo.objects.get(id=id)
                     print 'Updating photo %s' % id
                 except Photo.DoesNotExist:
                     print 'Creating a new photo %s' % id
                     photo = Photo()
-                    photo.date = datetime.now()
+                    photo.id = id
+                    photo.secret = secret
                 
                 # Request more information on the photo
-                secret = photo_el.get('secret')
                 info_el = flickr.photos_getinfo(
                     user_id=account['user_id'],
                     photo_id=id, secret=secret)
                 photoinfo_el = info_el.find('photo')
-                username = photoinfo_el.find('owner').get('username')
-                dateuploadedst = photoinfo_el.get('dateuploaded')
-                datetakenst = photoinfo_el.find('dates').get('taken', '')
+                photo.infoxml = tostring(photoinfo_el)
                 
                 # Parse xml
-                date = None
-                if DATE_REGEXP.match(datetakenst):
-                    date = datetime.strptime(datetakenst, '%Y-%m-%d %H:%M:%S')
-                dateuploaded = datetime.fromtimestamp(float(dateuploadedst))
-                description = photoinfo_el.findtext('description')
-                title = photoinfo_el.findtext('title')
-                farm = int(photoinfo_el.get('farm'))
-                server = int(photoinfo_el.get('server'))
-                xml = tostring(photo_el)
-                owner = photo_el.get('owner')
-                infoxml = tostring(photoinfo_el)
+                photo.username = photoinfo_el.find('owner').get('username')
+                photo.dateuploaded = datetime.fromtimestamp(float(
+                    photoinfo_el.get('dateuploaded')))
+                datetaken = photoinfo_el.find('dates').get('taken', '')
+                photo.date = datetime.strptime(datetaken, '%Y-%m-%d %H:%M:%S')
+                photo.description = photoinfo_el.findtext('description')
+                photo.title = photoinfo_el.findtext('title')
+                photo.farm = int(photoinfo_el.get('farm'))
+                photo.server = int(photoinfo_el.get('server'))
+                photo.xml = tostring(photo_el)
+                photo.owner = photo_el.get('owner')
+                
+                # Parse optional properties, always delete from object when 
+                # none exist - they may be newly removed
                 location = photoinfo_el.find('location')
                 if location:
-                    latitude = location.get('latitude')
-                    longitude = location.get('longitude')
-              
-                # Set core properties
-                photo.id = id
-                if date:
-                    photo.date = date
-                photo.xml = xml
-                photo.username = username
-                photo.secret = secret
-                photo.infoxml = infoxml
-                photo.dateuploaded = dateuploaded
-                photo.description = description
-                photo.title = title
-                photo.farm = farm
-                photo.server = server
-                
-                # Set optional properties
-                if location:
-                    photo.longitude = longitude
-                    photo.latitude = latitude
-                # These may have been removed from flickr, wipe them
+                    photo.latitude = location.get('latitude')
+                    photo.longitude = location.get('longitude')
                 else:
                     photo.longitude = None
                     photo.latitude = None
-                    
                     
                 photo.save()
 
