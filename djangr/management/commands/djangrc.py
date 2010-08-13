@@ -37,6 +37,7 @@ class Command(NoArgsCommand):
                     print 'Creating a new photo %s' % id
                     photo = Photo()
                     photo.id = id
+                    photo.active = True
                     photo.secret = secret
                 
                 # Request more information on the photo

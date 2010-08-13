@@ -4,6 +4,7 @@ class Photo(models.Model):
     """
     Store photo details returned by the flickr api.
     """
+    active = models.BooleanField()
     title = models.CharField(max_length=180)
     date = models.DateTimeField() # date taken, 'date' is polymorphic
     dateuploaded = models.DateTimeField()
